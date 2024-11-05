@@ -249,7 +249,7 @@ class _ControlPanelState extends State<ControlPanel> {
             },
             child: const Text('draw!')),
         const SizedBox(height: 40),
-        Text('Time: $time ms'),
+        Text('Time: $time microsec'),
       ],
     );
   }

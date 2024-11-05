@@ -59,7 +59,7 @@ class FieldCubit extends Cubit<FieldState> {
       case LineType.dda:
         drawLineDDA(x1 + 1, y1 + 1, x2 + 1, y2 + 1);
       case LineType.brez:
-        drawLineBresenham(x1 + 1, y1 + 1, x1 + 1, y2 + 1);
+        drawLineBresenham(x1 + 1, y1 + 1, x2 + 1, y2 + 1);
       case LineType.circBrez:
         drawCircleBresenham(x1 + 1, y1 + 1, x2 + 1, y2 + 1);
     }
@@ -67,7 +67,7 @@ class FieldCubit extends Cubit<FieldState> {
 
   // Метод 1. Рисование отрезка с пошаговым алгоритмом
   void drawLineStepwise(int x1, int y1, int x2, int y2) {
-    final start = DateTime.now().millisecondsSinceEpoch;
+    final start = DateTime.now().microsecondsSinceEpoch;
     int dx = (x2 - x1).abs();
     int dy = (y2 - y1).abs();
     int steps = dx > dy ? dx : dy;
@@ -83,14 +83,14 @@ class FieldCubit extends Cubit<FieldState> {
       x += xIncrement;
       y += yIncrement;
     }
-    final end = DateTime.now().millisecondsSinceEpoch;
+    final end = DateTime.now().microsecondsSinceEpoch;
     state.time = end - start;
     //print(state.cols);
   }
 
   // Метод 2. Рисование отрезка с использованием алгоритма ЦДА
   void drawLineDDA(int x1, int y1, int x2, int y2) {
-    final start = DateTime.now().millisecondsSinceEpoch;
+    final start = DateTime.now().microsecondsSinceEpoch;
     double dx = (x2 - x1).toDouble();
     double dy = (y2 - y1).toDouble();
     int steps = (dx.abs() > dy.abs()) ? dx.abs().round() : dy.abs().round();
@@ -106,18 +106,19 @@ class FieldCubit extends Cubit<FieldState> {
       x += xIncrement;
       y += yIncrement;
     }
-    final end = DateTime.now().millisecondsSinceEpoch;
+    final end = DateTime.now().microsecondsSinceEpoch;
     state.time = end - start;
   }
 
   // Метод 3. Рисование отрезка с использованием алгоритма Брезенхема
   void drawLineBresenham(int x1, int y1, int x2, int y2) {
-    final start = DateTime.now().millisecondsSinceEpoch;
+    final start = DateTime.now().microsecondsSinceEpoch;
     int dx = (x2 - x1).abs();
     int dy = (y2 - y1).abs();
     int sx = x1 < x2 ? 1 : -1;
     int sy = y1 < y2 ? 1 : -1;
     int err = dx - dy;
+    int e2;
 
     while (true) {
       addPixel(x1, y1);
@@ -133,13 +134,13 @@ class FieldCubit extends Cubit<FieldState> {
         y1 += sy;
       }
     }
-    final end = DateTime.now().millisecondsSinceEpoch;
+    final end = DateTime.now().microsecondsSinceEpoch;
     state.time = end - start;
   }
 
   // Метод 4. Рисование окружности с использованием алгоритма Брезенхема
   void drawCircleBresenham(int xc, int yc, int x, int y) {
-    final start = DateTime.now().millisecondsSinceEpoch;
+    final start = DateTime.now().microsecondsSinceEpoch;
     int dx = (x - xc).abs();
     int dy = (y - yc).abs();
     int r = sqrt(dx * dx + dy * dy).round(); // радиус окружности
@@ -165,7 +166,7 @@ class FieldCubit extends Cubit<FieldState> {
       }
       cx++;
     }
-    final end = DateTime.now().millisecondsSinceEpoch;
+    final end = DateTime.now().microsecondsSinceEpoch;
     state.time = end - start;
   }
 
