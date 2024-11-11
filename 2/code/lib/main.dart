@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -29,6 +27,8 @@ class _MyAppState extends State<MyApp> {
   ];
   var images = <Uint8List>[];
   var mats = <cv.Mat>[];
+  double mean = 0;
+  final meanController = TextEditingController();
 
   @override
   void initState() {
@@ -157,10 +157,14 @@ class _MyAppState extends State<MyApp> {
 
       (hsvNormIm, hsvNormHist) =
           await normalizeHSVandHist(im); // hsv-норм изобр и гистогр
-      final tmep = await gray.meanAsync();
-      print(tmep.val);
-      (_, segmented) = await cv.thresholdAsync(gray, tmep.val1, 255,
-          cv.THRESH_BINARY_INV); // сегментированое grayscale
+      final mean1 = await gray.meanAsync();
+      setState(() {
+        mean = mean1.val1;
+        meanController.text = mean.toString();
+      });
+      //print(tmep.val);
+      (_, segmented) = await cv.thresholdAsync(
+          gray, mean, 255, cv.THRESH_BINARY_INV); // сегментированое grayscale
 
       grayNorm = await linearContrasting(im);
       grayNormHist = await getRGBHist(grayNorm);
@@ -182,8 +186,9 @@ class _MyAppState extends State<MyApp> {
       grayNorm,
       grayNormHist,
     );
-    //return (im, gray, segmented, regHist, eqImHist, eqHist);
   }
+
+  late cv.Mat mat;
 
   @override
   Widget build(BuildContext context) {
@@ -203,15 +208,22 @@ class _MyAppState extends State<MyApp> {
                   final img =
                       await picker.pickImage(source: ImageSource.gallery);
                   if (img != null) {
+                    setState(
+                      () {
+                        images = [];
+                        mats = [];
+                      },
+                    );
                     final path = img.path;
-                    final mat = cv.imread(path);
+                    setState(() {
+                      mat = cv.imread(path);
+                    });
+                    //final mat =
 
                     print(
                         "cv.imread: width: ${mat.cols}, height: ${mat.rows}, path: $path");
                     debugPrint("mat.data.length: ${mat.data.length}");
-                    // heavy computation
-                    // final (im, gray, segmented, hist, eqImHist, eqHist) =
-                    //     await heavyTaskAsync(mat, count: 1);
+
                     final (
                       im,
                       regHist,
@@ -263,13 +275,13 @@ class _MyAppState extends State<MyApp> {
                     children: [
                       Text(
                         labels[i],
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                         ),
                       ),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.3,
-                        height: 290,
+                        height: i == 3 ? 270 : 290,
                         child: Image.memory(
                           images[2 * i],
                           fit: BoxFit.contain,
@@ -294,12 +306,16 @@ class _MyAppState extends State<MyApp> {
                             File(outputFile).writeAsBytes(images[2 * i]);
                           }
                         },
-                        child: Text('Save'),
+                        child: const Text('Save'),
                       ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      if (i < 4)
+                      if (i == 3)
+                        MeanConf(
+                          image: images[2 * i + 1],
+                          mean: mean,
+                          mat: mats[6],
+                        ),
+                      //mat: cv.cvtColor(mat, cv.COLOR_BGR2GRAY)),
+                      if (i < 3)
                         SizedBox(
                           width: MediaQuery.of(context).size.width * 0.3,
                           height: 290,
@@ -333,29 +349,84 @@ class _MyAppState extends State<MyApp> {
                   );
                 },
                 itemCount: 5,
-              )
-                  // child: GridView.count(
-
-                  //   crossAxisCount: 2,
-                  //   mainAxisSpacing: 20,
-                  //   crossAxisSpacing: 20,
-                  //   scrollDirection: Axis.horizontal,
-                  //   children: images.map((image) {
-                  //     return SizedBox(
-                  //       width: MediaQuery.of(context).size.width * 0.3,
-                  //       height: 300,
-                  //       child: Image.memory(
-                  //         image,
-                  //         fit: BoxFit.contain,
-                  //       ),
-                  //     );
-                  //   }).toList(),
-                  // ),
-                  ),
+              )),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class MeanConf extends StatefulWidget {
+  final cv.Mat mat;
+  final Uint8List image;
+  final double mean;
+  MeanConf({
+    super.key,
+    required this.image,
+    required this.mean,
+    required this.mat,
+  });
+
+  @override
+  State<MeanConf> createState() => _MeanConfState();
+}
+
+class _MeanConfState extends State<MeanConf> {
+  late Uint8List image;
+  late cv.Mat mat;
+  late double mean;
+  final meanController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    image = widget.image;
+    mean = widget.mean;
+    mat = widget.mat;
+    meanController.text = mean.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 50,
+              child: TextFormField(
+                controller: meanController,
+                onFieldSubmitted: (value) {
+                  try {
+                    double val = double.parse(value);
+                    setState(() {
+                      mean = val;
+                      image = cv
+                          .imencode(
+                              '.png',
+                              cv
+                                  .threshold(
+                                      mat, mean, 255, cv.THRESH_BINARY_INV)
+                                  .$2)
+                          .$2;
+                    });
+                  } catch (e) {}
+                },
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          width: MediaQuery.of(context).size.width * 0.3,
+          height: 290,
+          child: Image.memory(
+            image,
+            fit: BoxFit.contain,
+          ),
+        )
+      ],
     );
   }
 }
