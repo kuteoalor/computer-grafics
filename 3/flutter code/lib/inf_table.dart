@@ -1,34 +1,25 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 import 'package:cglab3/field_cubit.dart';
 import 'package:cglab3/field_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
-/// The class demonstrating an infinite number of rows and columns in
-/// TableView.
-class InfiniteTableExample extends StatefulWidget {
-  /// Creates a screen that demonstrates an infinite TableView widget.
-  const InfiniteTableExample({super.key});
+class PixelGrid extends StatefulWidget {
+  const PixelGrid({super.key});
 
   @override
-  State<InfiniteTableExample> createState() => _InfiniteExampleState();
+  State<PixelGrid> createState() => _PixelGridState();
 }
 
-class _InfiniteExampleState extends State<InfiniteTableExample> {
-  int? _rowCount;
-  int? _columnCount;
-
+class _PixelGridState extends State<PixelGrid> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.black,
       body: InteractiveViewer(
         minScale: 0.8,
-        maxScale: 1.5,
+        maxScale: 2,
+        //alignment: Alignment.center,
         //panEnabled: false,
         //trackpadScrollCausesScale: true,
         //constrained: false,
@@ -48,12 +39,6 @@ class _InfiniteExampleState extends State<InfiniteTableExample> {
   }
 
   TableViewCell _buildCell(BuildContext context, TableVicinity vicinity) {
-    // final Color boxColor =
-    //     switch ((vicinity.row.isEven, vicinity.column.isEven)) {
-    //   (true, false) || (false, true) => Colors.white,
-    //   (false, false) => Colors.indigo[100]!,
-    //   (true, true) => Colors.indigo[200]!
-    // };
     if (vicinity.column == vicinity.row && vicinity.row == 0) {
       return const TableViewCell(
           child: Padding(
@@ -61,7 +46,7 @@ class _InfiniteExampleState extends State<InfiniteTableExample> {
         child: ColoredBox(
             color: Colors.white,
             child: Text(
-              '0',
+              '-',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
@@ -75,7 +60,7 @@ class _InfiniteExampleState extends State<InfiniteTableExample> {
         child: ColoredBox(
           color: Colors.white,
           child: Text(
-            vicinity.row.toString(),
+            (vicinity.row - 1).toString(),
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 11,
@@ -90,7 +75,7 @@ class _InfiniteExampleState extends State<InfiniteTableExample> {
         child: ColoredBox(
             color: Colors.white,
             child: Text(
-              vicinity.column.toString(),
+              (vicinity.column - 1).toString(),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 11,
@@ -127,28 +112,63 @@ class ClickablePixel extends StatefulWidget {
 
 class _ClickablePixelState extends State<ClickablePixel> {
   bool isSelected = false;
+  int intensity = 0;
+
+  final controller = OverlayPortalController();
 
   @override
   void initState() {
-    isSelected = BlocProvider.of<FieldCubit>(context)
-        .checkIfSelected(widget.x, widget.y);
+    var (isSelected1, intensity1) =
+        BlocProvider.of<GridCubit>(context).checkIfSelected(widget.x, widget.y);
+    isSelected = isSelected1;
+    intensity = intensity1;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<FieldCubit, FieldState>(
+    return BlocConsumer<GridCubit, GridState>(
       builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.all(0.5),
-          child: ColoredBox(
-            color: isSelected ? Colors.black : Colors.white,
+        return MouseRegion(
+          onEnter: (event) {
+            controller.toggle();
+          },
+          onExit: (event) {
+            controller.toggle();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(0.5),
+            child: ColoredBox(
+              color: isSelected
+                  ? Color.fromARGB(intensity, 255, 255, 255)
+                  : Colors.white,
+              child: OverlayPortal(
+                controller: controller,
+                overlayChildBuilder: (_) {
+                  return Positioned(
+                    top: 15,
+                    left: 15,
+                    child: ColoredBox(
+                      color: Colors.grey,
+                      child: Text(
+                        'x: ${widget.x - 1} y: ${widget.y - 1}',
+                        style: TextStyle(
+                          fontSize: 42,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         );
       },
-      listener: (BuildContext context, FieldState state) {
-        isSelected = BlocProvider.of<FieldCubit>(context)
+      listener: (BuildContext context, GridState state) {
+        var (isSelected1, intensity1) = BlocProvider.of<GridCubit>(context)
             .checkIfSelected(widget.x, widget.y);
+        isSelected = isSelected1;
+        intensity = intensity1;
       },
     );
   }

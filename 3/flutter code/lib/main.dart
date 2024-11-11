@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => FieldCubit(),
+      create: (context) => GridCubit(),
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
             width: MediaQuery.of(context).size.width * 0.3,
             child: ControlPanel(),
           ),
-          Expanded(child: const InfiniteTableExample()),
+          Expanded(child: const PixelGrid()),
         ],
       ),
     );
@@ -88,7 +88,7 @@ class _ControlPanelState extends State<ControlPanel> {
       children: [
         GroupButton(
           onSelected: (value, index, isSelected) =>
-              BlocProvider.of<FieldCubit>(context).typeChanged(index),
+              BlocProvider.of<GridCubit>(context).typeChanged(index),
           isRadio: true,
           controller: controller,
           buttons: const [
@@ -235,9 +235,9 @@ class _ControlPanelState extends State<ControlPanel> {
                 final x2 = int.parse(x2Controller.text);
                 final y1 = int.parse(y1Controller.text);
                 final y2 = int.parse(y2Controller.text);
-                BlocProvider.of<FieldCubit>(context).draw(x1, y1, x2, y2);
+                BlocProvider.of<GridCubit>(context).draw(x1, y1, x2, y2);
                 setState(() {
-                  time = BlocProvider.of<FieldCubit>(context).getTime();
+                  time = BlocProvider.of<GridCubit>(context).getTime();
                 });
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -250,6 +250,17 @@ class _ControlPanelState extends State<ControlPanel> {
             child: const Text('draw!')),
         const SizedBox(height: 40),
         Text('Time: $time microsec'),
+        const SizedBox(height: 40),
+        ElevatedButton(
+          onPressed: () =>
+              BlocProvider.of<GridCubit>(context).drawAntialiased(),
+          child: const Text('make anti-aliased'),
+        ),
+        const SizedBox(height: 40),
+        ElevatedButton(
+          onPressed: () => BlocProvider.of<GridCubit>(context).clear(),
+          child: const Text('clear'),
+        ),
       ],
     );
   }
